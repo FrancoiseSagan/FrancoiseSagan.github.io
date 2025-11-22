@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSTEM_BOOT // USER_PROFILE</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --phosphor-main: #ffb000;
+            --phosphor-dim: #b37b00;
+            --bg-color: #111;
+            --bezel-color: #2a2a2a;
+            --plastic-highlight: #3d3d3d;
+            --crt-flicker: rgba(255, 176, 0, 0.05);
+            --stripe-1: #ff3333;
+            --stripe-2: #33ff33;
+            --stripe-3: #3333ff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050505;
+            color: var(--phosphor-main);
+            font-family: 'VT323', monospace;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .terminal-casing {
+            width: 90vw;
+            max-width: 1000px;
+            height: 85vh;
+            background-color: var(--bezel-color);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 
+                inset 2px 2px 5px rgba(255,255,255,0.1),
+                inset -5px -5px 10px rgba(0,0,0,0.5),
+                0 20px 50px rgba(0,0,0,0.8);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stripe-deco {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            width: 100px;
+            height: 10px;
+            background: linear-gradient(90deg, var(--stripe-1) 33%, var(--stripe-2) 33% 66%, var(--stripe-3) 66%);
+            border-radius: 2px;
+            opacity: 0.8;
+        }
+
+        .crt-screen {
+            background-color: var(--bg-color);
+            flex-grow: 1;
+            border-radius: 10px 10px 40px 10px;
+            border: 4px solid #000;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            padding: 2rem;
+            overflow-y: auto;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 0 4px var(--phosphor-dim);
+        }
+
+        .crt-screen::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .crt-screen::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: rgba(18, 16, 16, 0.1);
+            opacity: 0;
+            z-index: 2;
+            pointer-events: none;
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.02; }
+            50% { opacity: 0.05; }
+            100% { opacity: 0.02; }
+        }
+
+        .header-bar {
+            border-bottom: 2px solid var(--phosphor-main);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .status {
+            font-size: 1rem;
+            align-self: flex-end;
+            animation: blink 1s step-end infinite;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid-layout { grid-template-columns: 1fr; }
+        }
+
+        .section-title {
+            background-color: var(--phosphor-main);
+            color: var(--bg-color);
+            padding: 2px 8px;
+            display: inline-block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        p {
+            font-size: 1.2rem;
+            line-height: 1.4;
+            margin-bottom: 1rem;
+        }
+
+        /* 数据列表样式 */
+        .data-list {
+            list-style: none;
+            padding: 0;
+        }
+        .data-list li {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed var(--phosphor-dim);
+            padding: 5px 0;
+            margin-bottom: 5px;
+        }
+
+        .control-panel {
+            height: 60px;
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .mech-btn {
+            background: #c0c0c0;
+            border: none;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #888;
+            border-bottom: 4px solid #666;
+            padding: 10px 20px;
+            font-family: 'Share Tech Mono', monospace;
+            font-weight: bold;
+            color: #222;
+            cursor: pointer;
+            text-transform: uppercase;
+            position: relative;
+            transition: all 0.1s;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        .mech-btn:active {
+            transform: translateY(2px);
+            border-bottom: 2px solid #666;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            background: #b0b0b0;
+        }
+
+        .led {
+            width: 12px;
+            height: 12px;
+            background-color: #330000;
+            border-radius: 50%;
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5);
+            border: 1px solid #555;
+        }
+        .led.on {
+            background-color: #ff0000;
+            box-shadow: 0 0 5px #ff0000, inset 2px 2px 2px rgba(255,255,255,0.5);
+        }
+
+        a {
+            color: var(--phosphor-main);
+            text-decoration: none;
+            border-bottom: 1px solid var(--phosphor-main);
+        }
+        a:hover {
+            background-color: var(--phosphor-main);
+            color: var(--bg-color);
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+            border-left: 1px solid var(--phosphor-dim);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--phosphor-main);
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1em;
+            background-color: var(--phosphor-main);
+            animation: blink 1s step-end infinite;
+            vertical-align: text-bottom;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="terminal-casing">
+        <div class="crt-screen">
+            <div class="header-bar">
+                <div>
+                    <span style="font-size:0.8em;">TAPE_COUNTER: <span id="counter">000</span></span><br>
+                    <h1>USER: Gao Yansheng</h1>
+                </div>
+                <div class="status">
+                    SYSTEM: ONLINE<br>
+                    <span id="clock">00:00:00</span>
+                </div>
+            </div>
+
+            <div class="grid-layout">
+                <div class="col-left">
+                    <div class="section-title">/// IDENTIFICATION</div>
+                    <p id="typing-text">
+                        <!-- JS -->
+                    </p>
+                    
+                    <br>
+                    
+                    <div class="section-title">/// SPECS</div>
+                    <ul class="data-list">
+                        <li><span>ROLE</span> <span>[ STUDENG ]</span></li>
+                        <li><span>LOCATION</span> <span>[ BEIJING ]</span></li>
+                        <li><span>EXP</span> <span>[ LEVEL 05 ]</span></li>
+                        <li><span>STATUS</span> <span>[ SLEEPING ]</span></li>
+                    </ul>
+                </div>
+
+                <div class="col-right">
+                    <div class="section-title">/// MEMORY_BANKS (What I'm learning now)</div>
+                    
+                    <div style="border: 1px solid var(--phosphor-main); padding: 10px; margin-bottom: 15px;">
+                        <strong>-- Cuda Programing</strong>
+                        <p style="font-size: 0.9rem; margin: 5px 0;">孩子不懂事，学着玩的</p>
+                    </div>
+
+                    <div style="border: 1px solid var(--phosphor-main); padding: 10px; margin-bottom: 15px;">
+                        <strong>-- MLsys</strong>
+                        <p style="font-size: 0.9rem; margin: 5px 0;">其实我根本不懂你们说的注意力是什么</p>
+                    </div>
+
+                    <div class="section-title">/// COMMUNICATION</div>
+                    <p>
+                        > EMAIL1: <a href="tomorin@stu.cqu.edu.cn">tomorin@stu.cqu.edu.cn</a><br>
+                        > EMAIL2: <a href="tomorin1@foxmail.com">tomorin1@foxmail.com</a><br>
+                        > EMAIL3: <a href="theymakedatabasedontthey@gmail.com">theymakedatabasedontthey@gmail.com</a><br>
+                        > GITHUB: <a href="https://github.com/FrancoiseSagan">@FrancoiseSagan</a>
+                    </p>
+                </div>
+            </div>
+
+            <br><br>
+            <p style="text-align: center; opacity: 0.6; font-size: 0.8rem;">
+                COPYRIGHT (C) 1985-2077 CORP.<br>
+                MEMORY FREE: 64KB
+            </p>
+        </div>
+
+        <div class="stripe-deco"></div>
+        <div class="control-panel">
+            <div class="led on"></div>
+            <button class="mech-btn" onclick="location.reload()">RESET</button>
+            <button class="mech-btn">EJECT</button>
+            <div class="led"></div>
+        </div>
+    </div>
+
+    <script>
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('en-GB');
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        let count = 0;
+        setInterval(() => {
+            count++;
+            document.getElementById('counter').innerText = count.toString().padStart(3, '0');
+        }, 2000);
+
+        const textToType = "正在加载用户数据... \n我是重庆大学2022级本科生高研盛，目前在iccas实习，我最爱的电影是贾樟柯的《站台》，最爱的国内导演是侯孝贤、杨德昌、贾樟柯、娄烨和毕赣，如果你也喜欢欢迎和我交流";
+        const typeContainer = document.getElementById('typing-text');
+        let i = 0;
+
+        function typeWriter() {
+            if (i < textToType.length) {
+                if (textToType.charAt(i) === "\n") {
+                    typeContainer.innerHTML += "<br>";
+                } else {
+                    typeContainer.innerHTML += textToType.charAt(i);
+                }
+                i++;
+                setTimeout(typeWriter, 50);
+            } else {
+                typeContainer.innerHTML += '<span class="cursor"></span>';
+            }
+        }
+        
+        setTimeout(typeWriter, 800);
+    </script>
+</body>
+</html>
